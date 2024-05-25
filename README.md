@@ -20,6 +20,8 @@ It is possible that model overpredicts or underpredicts at some ranges of the pr
 
 In the example above, it is possible you don't observe much overall calibration error but you observe what is called expected calibration error. $\sum_{i=1}^{5}|avg(y\_pred) - avg(y)|$
 
+![Example 1](./images/example_of_miscalib_type1.png)
+
 ## Feature based
 
 In this we are given a feature which has categorical values. For instance, your might be overall calibrated but miscalibrated for users who come to your app less than 5 out of 30 days. Or it could be miscalibrated for items of certain type.
