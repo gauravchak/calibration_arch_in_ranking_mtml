@@ -100,7 +100,6 @@ class PredictionBucketsCalibration(MultiTaskEstimator):
     ) -> torch.Tensor:
         """Compute the loss during training"""
 
-
         # Get task logits using forward method
         ui_logits = super().forward(
             user_id=user_id,
