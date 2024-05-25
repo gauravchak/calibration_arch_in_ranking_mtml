@@ -18,7 +18,9 @@ It is possible that model overpredicts or underpredicts at some ranges of the pr
 | 61-80 percentile  | 0.22       | 0.21             |
 | 81-100 percentile | 0.27       | 0.23             |
 
-In the example above, it is possible you don't observe much overall calibration error but you observe what is called expected calibration error. $\sum_{i=1}^{5}|avg(y\_pred) - avg(y)|$
+In the example above, it is possible you don't observe much overall calibration error but you observe what is called expected calibration error. 
+$$\sum_{i=1}^{5}|avg(y\_pred) - avg(y)|$$
+
 
 ![Example 1](./images/example_of_miscalib_type1.png)
 
