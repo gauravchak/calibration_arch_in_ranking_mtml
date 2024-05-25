@@ -33,6 +33,7 @@ class PredictionBucketsCalibration(MultiTaskEstimator):
         user_value_weights: List[float],
         num_pred_buckets: int,
         training_batch_size: int,
+        cali_loss_wt: float,
     ) -> None:
         """
         params:
@@ -46,9 +47,10 @@ class PredictionBucketsCalibration(MultiTaskEstimator):
             user_value_weights: T dimensional weights, such that a linear
             combination of point-wise immediate rewards is the best predictor
             of long term user satisfaction.
-            num_pred_buckets: the number of buckets to use for prediction score
+            num_pred_buckets (PB): the number of buckets to use for prediction score
                 calibration
-            training_batch_size: size of training batch
+            training_batch_size (B): size of training batch
+            cali_loss_wt: weight for calibration loss.
         """
         super(PredictionBucketsCalibration, self).__init__(
             num_tasks=num_tasks,
@@ -63,6 +65,8 @@ class PredictionBucketsCalibration(MultiTaskEstimator):
         self.num_pred_buckets = num_pred_buckets
         assert(self.num_pred_buckets <= 20, "We are limiting to 20 buckets")
         self.training_batch_size = training_batch_size
+        self.cali_loss_wt = cali_loss_wt
+
         # To make computation faster we assume that training data is provided
         # to us in a fixed batch size. We create a matrix [B, num_pred_buckets]
         # to project the sorted prediction and label values.
@@ -76,8 +80,47 @@ class PredictionBucketsCalibration(MultiTaskEstimator):
 
         # Sum along columns and divide
         column_sums = self.scale_proj_mat.sum(dim=1)
-        self.scale_proj_mat = self.scale_proj_mat / column_sums
-
+        self.scale_proj_mat = self.scale_proj_mat / column_sums  # [B, PB]
+        # Transposing helps because then we can mutliply with [B, T]
+        # during loss computation.
+        self.scale_proj_mat = self.scale_proj_mat.T  # [PB, B]
         # Register the scale_proj_mat as a buffer
         self.register_buffer('scale_proj_mat', self.scale_proj_mat)
 
+
+    def train_forward(
+        self,
+        user_id,
+        user_features,
+        item_id,
+        item_features,  # [B, II]
+        cross_features,  # [B, IC]
+        position,  # [B]
+        labels,  # [B, T]
+    ) -> torch.Tensor:
+        """Compute the loss during training"""
+
+
+        # Get task logits using forward method
+        ui_logits = super().forward(
+            user_id=user_id,
+            user_features=user_features,
+            item_id=item_id,
+            item_features=item_features,
+            cross_features=cross_features,
+            position=position,
+        )
+        labels = labels.float()
+        # Compute binary cross-entropy loss
+        cross_entropy_loss = F.binary_cross_entropy_with_logits(
+            input=ui_logits, target=labels, reduction="sum"
+        )
+        # compute label_mean [PB, T]
+        label_mean = torch.matmul(self.scale_proj_mat, labels)
+        # compute pred_mean [PB, T]
+        preds = torch.sigmoid(ui_logits)
+        pred_mean = torch.matmul(self.scale_proj_mat, preds)
+        # compute mean squared error
+        mse_per_task = ((label_mean - pred_mean) ** 2).mean(dim=0)
+        calibration_loss = mse_per_task.mean()
+        return cross_entropy_loss + calibration_loss * self.cali_loss_wt
