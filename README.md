@@ -5,7 +5,7 @@ We show how to add a calibration arch to multi task multi-label models used in r
 In recommender systems, we train a late stage ranking model for logistic loss along the multiple binary classification tasks that the model needs to predict. Even when models are trained on a lot of data, it might be the case that we encounter miscalibration of the following types:
 
 ## Overall calibration
-This refers to cases where on a large enough eval dataset $\frac{avg(y\_pred)}{avg(y)}$ is much above or below 1. In ads recommender systems stacks, and often in feed blending stacks ensure calibration is a must. In other recsys it is often considered a good-to-have but not a must-have. Personally I believe calibration is important if your recsys uses a value model / [multi-task-fusion](https://arxiv.org/pdf/2208.04560) approach.
+This refers to cases where on a large enough eval dataset $\frac{avg(PredictedProbability)}{avg(UserActionLabel)}$ is much above or below 1. In ads recommender systems stacks, and often in feed blending stacks ensure calibration is a must. In other recsys it is often considered a good-to-have but not a must-have. Personally I believe calibration is important if your recsys uses a value model / [multi-task-fusion](https://arxiv.org/pdf/2208.04560) approach.
 
 ## Calibration on prediction buckets 
 It is possible that model overpredicts or underpredicts at some ranges of the prediction. For instance if you make 5 equal buckets of the eval dataset based on the predicted labels and compare the average values of the predicted label and observed task, do you see some buckets where there is significant gap in prediction vs observation? e.g.
@@ -19,7 +19,7 @@ It is possible that model overpredicts or underpredicts at some ranges of the pr
 | 81-100 percentile | 0.27       | 0.23             | 0.04 |
 
 In the example above, it is possible you don't observe much overall calibration error but you observe what is called expected calibration error. 
-$$\sum_{i=1}^{5}|avg(y\_pred) - avg(y)|$$
+$$\sum_{i=1}^{5}|avg(PredictedProbability) - avg(UserActionLabel)|$$
 
 
 ![Example 1](./images/example_of_miscalib_type1.png)
