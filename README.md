@@ -10,11 +10,8 @@ This refers to cases where on a large enough eval dataset $\frac{avg(y\_pred)}{a
 ## Calibration on prediction buckets 
 It is possible that model overpredicts or underpredicts at some ranges of the prediction. For instance if you make 5 equal buckets of the eval dataset based on the predicted labels and compare the average values of the predicted label and observed task, do you see some buckets where there is significant gap in prediction vs observation? e.g.
 
-|-------------------|------------|------------------|
 | bucket            | avg(pred)  | avg(user label)  |
-|-------------------|------------|------------------|
 | 0-20 percentile   | 0.03       | 0.12             |
-|-------------------|------------|------------------|
 | 21-40 percentile  | 0.08       | 0.15             |
 |-------------------|------------|------------------|
 | 41-60 percentile  | 0.15       | 0.18             |
