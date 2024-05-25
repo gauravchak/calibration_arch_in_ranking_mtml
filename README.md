@@ -13,7 +13,6 @@ It is possible that model overpredicts or underpredicts at some ranges of the pr
 | bucket            | avg(pred)  | avg(user label)  |
 |-------------------|------------|------------------|
 | 0-20 percentile   | 0.03       | 0.12             |
-|-------------------|------------|------------------|
 | 21-40 percentile  | 0.08       | 0.15             |
 |-------------------|------------|------------------|
 | 41-60 percentile  | 0.15       | 0.18             |
