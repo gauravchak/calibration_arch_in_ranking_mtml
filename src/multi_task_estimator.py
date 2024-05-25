@@ -1,6 +1,5 @@
 """
-In [multi_task_estimator.py](./src/multi_task_estimator.py) we show a normal MTML without calibration cons
-tructs.
+In this class we show a normal MTML without calibration constructs.
 """
 
 """
@@ -43,6 +42,7 @@ class MultiTaskEstimator(nn.Module):
             of long term user satisfaction.
         """
         super(MultiTaskEstimator, self).__init__()
+        self.num_tasks = num_tasks
         self.user_value_weights = torch.tensor(
             user_value_weights
         )  # noqa TODO add device input.
