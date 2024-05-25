@@ -10,13 +10,13 @@ This refers to cases where on a large enough eval dataset $\frac{avg(y\_pred)}{a
 ## Calibration on prediction buckets 
 It is possible that model overpredicts or underpredicts at some ranges of the prediction. For instance if you make 5 equal buckets of the eval dataset based on the predicted labels and compare the average values of the predicted label and observed task, do you see some buckets where there is significant gap in prediction vs observation? e.g.
 
-| bucket            | avg(pred)  | avg(user label)  |
-|-------------------|------------|------------------|
-| 0-20 percentile   | 0.03       | 0.12             |
-| 21-40 percentile  | 0.08       | 0.15             |
-| 41-60 percentile  | 0.15       | 0.18             |
-| 61-80 percentile  | 0.22       | 0.21             |
-| 81-100 percentile | 0.27       | 0.23             |
+| bucket - percentile (pred) | avg(pred)  | avg(user label)  | absolute diff|
+|-------------------|------------|------------------|--------------|
+| 0-20 percentile   | 0.03       | 0.12             | 0.09 |
+| 21-40 percentile  | 0.08       | 0.15             | 0.07 |
+| 41-60 percentile  | 0.15       | 0.18             | 0.03 |
+| 61-80 percentile  | 0.22       | 0.21             | 0.01 |
+| 81-100 percentile | 0.27       | 0.23             | 0.04 |
 
 In the example above, it is possible you don't observe much overall calibration error but you observe what is called expected calibration error. 
 $$\sum_{i=1}^{5}|avg(y\_pred) - avg(y)|$$
@@ -28,9 +28,12 @@ $$\sum_{i=1}^{5}|avg(y\_pred) - avg(y)|$$
 
 In this we are given a feature which has categorical values. For instance, your might be overall calibrated but miscalibrated for users who come to your app less than 5 out of 30 days. Or it could be miscalibrated for items of certain type.
 
+Examples:
+1. You are training a "People you may know" friend recommendation unit in Facebook app. Say virtually 90%+ of the data is for users who have been on the app more than a month but you also want your model to do well for new users.
+
 # Code overview
 
-1. In [multi_task_estimator.py](./src/multi_task_estimator.py) we show a normal MTML without calibration cons
-tructs.
+1. In [multi_task_estimator.py](./src/multi_task_estimator.py) we show a normal MTML without calibration constructs.
+1. In [platt_scaling_calibration.py](./src/platt_scaling_calibration.py) we show an option of adding Platt Scaling to address OverAll Calibration.
 1. In [prediction_buckets_calibration.py](./src/prediction_buckets_calibration.py) we try to reduce the second type of calibration error, miscalibration along prediction buckets.
 1. In [feature_based_calibration.py](./src/feature_based_calibration.py) we measure miscalibration when the dataset is divided based on the categorical values of the specific feature.
