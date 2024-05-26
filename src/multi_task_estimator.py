@@ -1,8 +1,5 @@
 """
 In this class we show a normal MTML without calibration constructs.
-"""
-
-"""
 This is a specific instance of a final ranker in a recommender system.
 """
 
@@ -42,12 +39,12 @@ class MultiTaskEstimator(nn.Module):
             of long term user satisfaction.
         """
         super(MultiTaskEstimator, self).__init__()
-        self.num_tasks = num_tasks
-        self.user_value_weights = torch.tensor(
+        self.num_tasks: int = num_tasks
+        self.user_value_weights: torch.Tensor = torch.tensor(
             user_value_weights
         )  # noqa TODO add device input.
-        self.user_id_embedding_dim = user_id_embedding_dim
-        self.item_id_embedding_dim = item_id_embedding_dim
+        self.user_id_embedding_dim: int = user_id_embedding_dim
+        self.item_id_embedding_dim: int = item_id_embedding_dim
 
         # Embedding layers for item ids
         self.item_id_embedding_arch = nn.Embedding(
@@ -55,23 +52,23 @@ class MultiTaskEstimator(nn.Module):
         )
 
         # Linear projection layer for user features
-        self.user_features_layer = nn.Linear(
+        self.user_features_layer: nn.Module = nn.Linear(
             in_features=user_features_size, out_features=user_id_embedding_dim
         )  # noqa
 
         # Linear projection layer for user features
-        self.item_features_layer = nn.Linear(
+        self.item_features_layer: nn.Module = nn.Linear(
             in_features=item_features_size, out_features=item_id_embedding_dim
         )  # noqa
 
-        self.cross_feature_proc_dim = 128
+        self.cross_feature_proc_dim: int = 128
         # Linear projection layer for cross features
-        self.cross_features_layer = nn.Linear(
+        self.cross_features_layer: nn.Module = nn.Linear(
             in_features=cross_features_size, out_features=self.cross_feature_proc_dim
         )
 
         # Linear layer for final prediction
-        self.task_arch = nn.Linear(
+        self.task_arch: nn.Module = nn.Linear(
             in_features=(
                 2 * user_id_embedding_dim
                 + 2 * item_id_embedding_dim
@@ -104,7 +101,7 @@ class MultiTaskEstimator(nn.Module):
         """
 
         # Get user embedding
-        user_id_embedding = self.get_user_embedding(
+        user_id_embedding: torch.Tensor = self.get_user_embedding(
             user_id=user_id,
             user_features=user_features,
         )
@@ -121,7 +118,7 @@ class MultiTaskEstimator(nn.Module):
         cross_features_transformed = self.cross_features_layer(cross_features)
 
         # Concatenate user embedding, user features, and item embedding
-        combined_features = torch.cat(
+        combined_features: torch.Tensor = torch.cat(
             [
                 user_id_embedding,
                 user_features_transformed,
@@ -143,7 +140,7 @@ class MultiTaskEstimator(nn.Module):
         cross_features: torch.Tensor,  # [B, IC]
         position: torch.Tensor,  # [B]
     ) -> torch.Tensor:
-        combined_features = self.process_features(
+        combined_features: torch.Tensor = self.process_features(
             user_id=user_id,
             user_features=user_features,
             item_id=item_id,
@@ -168,7 +165,7 @@ class MultiTaskEstimator(nn.Module):
     ) -> torch.Tensor:
         """Compute the loss during training"""
         # Get task logits using forward method
-        ui_logits = self.forward(
+        ui_logits: torch.Tensor = self.forward(
             user_id=user_id,
             user_features=user_features,
             item_id=item_id,
@@ -178,7 +175,7 @@ class MultiTaskEstimator(nn.Module):
         )
 
         # Compute binary cross-entropy loss
-        cross_entropy_loss = F.binary_cross_entropy_with_logits(
+        cross_entropy_loss: torch.Tensor = F.binary_cross_entropy_with_logits(
             input=ui_logits, target=labels.float(), reduction="sum"
         )
 
