@@ -11,9 +11,9 @@ from src.multi_task_estimator import MultiTaskEstimator
 
 
 def compute_calibration_mse_separated_by_feature(
-    preds,
-    labels, 
-    binary_feature
+    preds: torch.Tensor,
+    labels: torch.Tensor, 
+    binary_feature: torch.Tensor
 ) -> torch.Tensor:
     """
     Args:
@@ -25,18 +25,18 @@ def compute_calibration_mse_separated_by_feature(
         mse_gte_05: Tensor of shape [T] (MSE for rows where f >= 0.5)
     """
     # Create masks
-    mask_lt_05 = (binary_feature < 0.5).unsqueeze(-1)  # [B, 1]
-    mask_gte_05 = (binary_feature >= 0.5).unsqueeze(-1)  # [B, 1]
+    mask_lt_05: torch.Tensor = (binary_feature < 0.5).unsqueeze(-1)  # [B, 1]
+    mask_gte_05: torch.Tensor = (binary_feature >= 0.5).unsqueeze(-1)  # [B, 1]
 
     # Apply masks to preds and labels
-    preds_lt_05 = preds[mask_lt_05.expand_as(preds)]
-    labels_lt_05 = labels[mask_lt_05.expand_as(labels)]
-    preds_gte_05 = preds[mask_gte_05.expand_as(preds)]
-    labels_gte_05 = labels[mask_gte_05.expand_as(labels)]
+    preds_lt_05: torch.Tensor = preds[mask_lt_05.expand_as(preds)]
+    labels_lt_05: torch.Tensor = labels[mask_lt_05.expand_as(labels)]
+    preds_gte_05: torch.Tensor = preds[mask_gte_05.expand_as(preds)]
+    labels_gte_05: torch.Tensor = labels[mask_gte_05.expand_as(labels)]
 
     # Compute MSE for each condition
-    mse_lt_05 = ((preds_lt_05 - labels_lt_05) ** 2).mean(dim=0)  # [T]
-    mse_gte_05 = ((preds_gte_05 - labels_gte_05) ** 2).mean(dim=0)  # [T]
+    mse_lt_05: torch.Tensor = ((preds_lt_05 - labels_lt_05) ** 2).mean(dim=0)  # [T]
+    mse_gte_05: torch.Tensor = ((preds_gte_05 - labels_gte_05) ** 2).mean(dim=0)  # [T]
 
     return mse_lt_05.sum() + mse_gte_05.sum()
 
@@ -89,9 +89,9 @@ class PredictionBucketsCalibration(MultiTaskEstimator):
             cross_features_size=cross_features_size,
             user_value_weights=user_value_weights
         )
-        self.training_batch_size = training_batch_size
-        self.cali_user_feature_index = cali_user_feature_index
-        self.cali_loss_wt = cali_loss_wt
+        self.training_batch_size: int = training_batch_size
+        self.cali_user_feature_index: int = cali_user_feature_index
+        self.cali_loss_wt: float = cali_loss_wt
 
     def train_forward(
         self,
@@ -101,7 +101,7 @@ class PredictionBucketsCalibration(MultiTaskEstimator):
         item_features,  # [B, II]
         cross_features,  # [B, IC]
         position,  # [B]
-        labels,  # [B, T]
+        labels: torch.Tensor,  # [B, T]
     ) -> torch.Tensor:
         """Compute the loss during training"""
 
@@ -114,15 +114,14 @@ class PredictionBucketsCalibration(MultiTaskEstimator):
             cross_features=cross_features,
             position=position,
         )
-        labels: torch.Tensor = labels.float()
         # Compute binary cross-entropy loss
         cross_entropy_loss: torch.Tensor = F.binary_cross_entropy_with_logits(
-            input=ui_logits, target=labels, reduction="sum"
+            input=ui_logits, target=labels.float(), reduction="sum"
         )
         binary_feature: torch.Tensor = user_features[:,self.cali_user_feature_index]
         calibration_loss: torch.Tensor = compute_calibration_mse_separated_by_feature(
             preds=torch.sigmoid(ui_logits),
-            labels=labels,
+            labels=labels.float(),
             binary_feature=binary_feature
         )
         return cross_entropy_loss + calibration_loss * self.cali_loss_wt
