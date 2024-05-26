@@ -5,9 +5,7 @@ We measure miscalibration when the dataset is divided based on the categorical v
 from typing import List
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-import random
 
 from src.multi_task_estimator import MultiTaskEstimator
 
@@ -108,7 +106,7 @@ class PredictionBucketsCalibration(MultiTaskEstimator):
         """Compute the loss during training"""
 
         # Get task logits using forward method
-        ui_logits = super().forward(
+        ui_logits: torch.Tensor = super().forward(
             user_id=user_id,
             user_features=user_features,
             item_id=item_id,
@@ -116,13 +114,13 @@ class PredictionBucketsCalibration(MultiTaskEstimator):
             cross_features=cross_features,
             position=position,
         )
-        labels = labels.float()
+        labels: torch.Tensor = labels.float()
         # Compute binary cross-entropy loss
-        cross_entropy_loss = F.binary_cross_entropy_with_logits(
+        cross_entropy_loss: torch.Tensor = F.binary_cross_entropy_with_logits(
             input=ui_logits, target=labels, reduction="sum"
         )
-        binary_feature = user_features[:,self.cali_user_feature_index]
-        calibration_loss = compute_calibration_mse_separated_by_feature(
+        binary_feature: torch.Tensor = user_features[:,self.cali_user_feature_index]
+        calibration_loss: torch.Tensor = compute_calibration_mse_separated_by_feature(
             preds=torch.sigmoid(ui_logits),
             labels=labels,
             binary_feature=binary_feature
