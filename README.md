@@ -31,6 +31,11 @@ In this we are given a feature which has categorical values. For instance, your 
 Examples:
 1. You are training a "People you may know" friend recommendation unit in Facebook app. Say virtually 90%+ of the data is for users who have been on the app more than a month but you also want your model to do well for new users.
 
+Approach:
+1. Look at the rows in the batch that have this binary feature ~ 0 and 1 separately.
+2. In each compute the mean values of the predicted probaility and the observed label.
+3. Compute the mean squared error between mean(predicted) and mean(observed)
+
 # Code overview
 
 1. In [multi_task_estimator.py](./src/multi_task_estimator.py) we show a normal MTML without calibration constructs.
