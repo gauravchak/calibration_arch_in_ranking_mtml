@@ -19,6 +19,7 @@ class PlattScalingCalibration(MultiTaskEstimator):
     def __init__(
         self,
         num_tasks: int,
+        user_id_hash_size: int,
         user_id_embedding_dim: int,
         user_features_size: int,
         item_id_hash_size: int,
@@ -31,6 +32,7 @@ class PlattScalingCalibration(MultiTaskEstimator):
         """
         params:
             num_tasks (T): The tasks to compute estimates of
+            user_id_hash_size: the size of the embedding table for users
             user_id_embedding_dim (DU): internal dimension
             user_features_size (IU): input feature size for users
             item_id_hash_size: the size of the embedding table for items
@@ -45,6 +47,7 @@ class PlattScalingCalibration(MultiTaskEstimator):
         """
         super(PlattScalingCalibration, self).__init__(
             num_tasks=num_tasks,
+            user_id_hash_size=user_id_hash_size,
             user_id_embedding_dim=user_id_embedding_dim,
             user_features_size=user_features_size,
             item_id_hash_size=item_id_hash_size,
@@ -66,11 +69,12 @@ class PlattScalingCalibration(MultiTaskEstimator):
         cross_features: torch.Tensor,  # [B, IC]
         position: torch.Tensor,  # [B]
     ) -> torch.Tensor:
-        ui_logits = super().forward(
+        ui_logits: torch.Tensor = super().forward(
             user_id, user_features, item_id, item_features, 
             cross_features, position
         )
-        calibrated_logits = self.weights * ui_logits + self.bias
+        calibrated_logits: torch.Tensor = self.weights * ui_logits + self.bias
+        return calibrated_logits
     
     def train_forward(
         self,
@@ -84,7 +88,7 @@ class PlattScalingCalibration(MultiTaskEstimator):
     ) -> torch.Tensor:
         """Compute the loss during training"""
         # Get task logits using superclass/uncalibrated method
-        ui_logits = super().forward(
+        ui_logits: torch.Tensor = super().forward(
             user_id=user_id,
             user_features=user_features,
             item_id=item_id,
@@ -97,7 +101,7 @@ class PlattScalingCalibration(MultiTaskEstimator):
         if random.random() < self.scaling_frac:
             ui_logits = self.weights * ui_logits.detach() + self.bias
         # Compute binary cross-entropy loss
-        cross_entropy_loss = F.binary_cross_entropy_with_logits(
+        cross_entropy_loss: torch.Tensor = F.binary_cross_entropy_with_logits(
             input=ui_logits, target=labels.float(), reduction="sum"
         )
 

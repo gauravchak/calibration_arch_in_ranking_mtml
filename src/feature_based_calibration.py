@@ -40,7 +40,7 @@ def compute_calibration_mse_separated_by_feature(
 
     return mse_lt_05.sum() + mse_gte_05.sum()
 
-class PredictionBucketsCalibration(MultiTaskEstimator):
+class FeatureBasedCalibration(MultiTaskEstimator):
     """
     Apart from logistic loss used to train each task in this implementation,
     which is y * log(y_hat) + (1 - y) * log(1 - y_hat), we add per-batch losses
@@ -52,6 +52,7 @@ class PredictionBucketsCalibration(MultiTaskEstimator):
     def __init__(
         self,
         num_tasks: int,
+        user_id_hash_size: int,
         user_id_embedding_dim: int,
         user_features_size: int,
         item_id_hash_size: int,
@@ -66,6 +67,7 @@ class PredictionBucketsCalibration(MultiTaskEstimator):
         """
         params:
             num_tasks (T): The tasks to compute estimates of
+            user_id_hash_size: the size of the embedding table for users
             user_id_embedding_dim (DU): internal dimension
             user_features_size (IU): input feature size for users
             item_id_hash_size: the size of the embedding table for items
@@ -79,8 +81,9 @@ class PredictionBucketsCalibration(MultiTaskEstimator):
             cali_user_feature_index: the user feature to use for calibration
             cali_loss_wt: weight for calibration loss.
         """
-        super(PredictionBucketsCalibration, self).__init__(
+        super(FeatureBasedCalibration, self).__init__(
             num_tasks=num_tasks,
+            user_id_hash_size=user_id_hash_size,
             user_id_embedding_dim=user_id_embedding_dim,
             user_features_size=user_features_size,
             item_id_hash_size=item_id_hash_size,

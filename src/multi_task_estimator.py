@@ -17,6 +17,7 @@ class MultiTaskEstimator(nn.Module):
     def __init__(
         self,
         num_tasks: int,
+        user_id_hash_size: int,
         user_id_embedding_dim: int,
         user_features_size: int,
         item_id_hash_size: int,
@@ -28,6 +29,7 @@ class MultiTaskEstimator(nn.Module):
         """
         params:
             num_tasks (T): The tasks to compute estimates of
+            user_id_hash_size: the size of the embedding table for users
             user_id_embedding_dim (DU): internal dimension
             user_features_size (IU): input feature size for users
             item_id_hash_size: the size of the embedding table for items
@@ -76,14 +78,18 @@ class MultiTaskEstimator(nn.Module):
             ),
             out_features=num_tasks,
         )
+        # Using the embedding lookup approach from https://github.com/gauravchak/user_preference_modeling/blob/main/src/userid_lookup_representaion.py
+        self.user_id_embedding_arch = nn.Embedding(
+            user_id_hash_size, user_id_embedding_dim
+        )
 
     def get_user_embedding(
         self,
         user_id: torch.Tensor,  # [B]
         user_features: torch.Tensor,  # [B, IU]
     ) -> torch.Tensor:
-        """Please implement in subclass"""
-        raise NotImplementedError("Subclasses must implement get_user_embedding method")
+        user_id_embedding: torch.Tensor = self.user_id_embedding_arch(user_id)
+        return user_id_embedding
 
     def process_features(
         self,
@@ -106,16 +112,16 @@ class MultiTaskEstimator(nn.Module):
             user_features=user_features,
         )
         # Embedding lookup for item ids
-        item_id_embedding = self.item_id_embedding_arch(item_id)
+        item_id_embedding: torch.Tensor = self.item_id_embedding_arch(item_id)
 
         # Linear transformation for user features
-        user_features_transformed = self.user_features_layer(user_features)
+        user_features_transformed: torch.Tensor = self.user_features_layer(user_features)
 
         # Linear transformation for item features
-        item_features_transformed = self.item_features_layer(item_features)
+        item_features_transformed: torch.Tensor = self.item_features_layer(item_features)
 
         # Linear transformation for user features
-        cross_features_transformed = self.cross_features_layer(cross_features)
+        cross_features_transformed: torch.Tensor = self.cross_features_layer(cross_features)
 
         # Concatenate user embedding, user features, and item embedding
         combined_features: torch.Tensor = torch.cat(

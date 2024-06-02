@@ -26,6 +26,7 @@ class FeatureBiasCapture(MultiTaskEstimator):
     def __init__(
         self,
         num_tasks: int,
+        user_id_hash_size: int,
         user_id_embedding_dim: int,
         user_features_size: int,
         item_id_hash_size: int,
@@ -39,6 +40,7 @@ class FeatureBiasCapture(MultiTaskEstimator):
         """
         params:
             num_tasks (T): The tasks to compute estimates of
+            user_id_hash_size: the size of the embedding table for users
             user_id_embedding_dim (DU): internal dimension
             user_features_size (IU): input feature size for users
             item_id_hash_size: the size of the embedding table for items
@@ -53,6 +55,7 @@ class FeatureBiasCapture(MultiTaskEstimator):
         """
         super(FeatureBiasCapture, self).__init__(
             num_tasks=num_tasks,
+            user_id_hash_size=user_id_hash_size,
             user_id_embedding_dim=user_id_embedding_dim,
             user_features_size=user_features_size,
             item_id_hash_size=item_id_hash_size,
