@@ -13,32 +13,43 @@ from src.multi_task_estimator import MultiTaskEstimator
 def compute_calibration_mse_separated_by_feature(
     preds: torch.Tensor,
     labels: torch.Tensor, 
-    binary_feature: torch.Tensor
+    binary_feature: torch.Tensor,
+    num_tasks: int
 ) -> torch.Tensor:
     """
     Args:
         preds: Tensor of shape [B, T]
         labels: Tensor of shape [B, T]
-        binary_feature: Tensor of shape [B] with float values (0 or 1)
+        binary_feature: Tensor of shape [B] with float values (ideally ~0 or ~1)
+        num_tasks: int
     Returns:
         mse_lt_05: Tensor of shape [T] (MSE for rows where f < 0.5)
         mse_gte_05: Tensor of shape [T] (MSE for rows where f >= 0.5)
     """
-    # Create masks
+    # Create masks for which indices in the batch are lt or gt 0.5
     mask_lt_05: torch.Tensor = (binary_feature < 0.5).unsqueeze(-1)  # [B, 1]
     mask_gte_05: torch.Tensor = (binary_feature >= 0.5).unsqueeze(-1)  # [B, 1]
 
     # Apply masks to preds and labels
-    preds_lt_05: torch.Tensor = preds[mask_lt_05.expand_as(preds)]
-    labels_lt_05: torch.Tensor = labels[mask_lt_05.expand_as(labels)]
-    preds_gte_05: torch.Tensor = preds[mask_gte_05.expand_as(preds)]
-    labels_gte_05: torch.Tensor = labels[mask_gte_05.expand_as(labels)]
+    preds_lt_05: torch.Tensor = preds[mask_lt_05.expand_as(preds)].view(-1, num_tasks)
+    labels_lt_05: torch.Tensor = labels[mask_lt_05.expand_as(labels)].float().view(-1, num_tasks)
+    preds_gte_05: torch.Tensor = preds[mask_gte_05.expand_as(preds)].view(-1, num_tasks)
+    labels_gte_05: torch.Tensor = labels[mask_gte_05.expand_as(labels)].float().view(-1, num_tasks)
+
+    # Compute means of pred and label for lt and gte partitions
+    # This is because the mean of preds_lt_05 is the per-task mean
+    # prediction for the case when feature is ~0
+    # Similarly label mean is the mean of the observation for this
+    # value of the binary feature.
+    # Calibration for us means that these should be the same and hence
+    # we are trying to compute the difference between these mean values.
+    preds_lt_05_mean: torch.Tensor = torch.mean(preds_lt_05, dim=0)
+    labels_lt_05_mean: torch.Tensor = torch.mean(labels_lt_05, dim=0)
+    preds_gte_05_mean: torch.Tensor = torch.mean(preds_gte_05, dim=0)
+    labels_gte_05_mean: torch.Tensor = torch.mean(labels_gte_05, dim=0)
 
     # Compute MSE for each condition
-    mse_lt_05: torch.Tensor = ((preds_lt_05 - labels_lt_05) ** 2).mean(dim=0)  # [T]
-    mse_gte_05: torch.Tensor = ((preds_gte_05 - labels_gte_05) ** 2).mean(dim=0)  # [T]
-
-    return mse_lt_05.sum() + mse_gte_05.sum()
+    return ((preds_lt_05_mean - labels_lt_05_mean) ** 2).sum() + ((preds_gte_05_mean - labels_gte_05_mean) ** 2).sum()
 
 class FeatureBasedCalibration(MultiTaskEstimator):
     """
@@ -125,6 +136,7 @@ class FeatureBasedCalibration(MultiTaskEstimator):
         calibration_loss: torch.Tensor = compute_calibration_mse_separated_by_feature(
             preds=torch.sigmoid(ui_logits),
             labels=labels.float(),
-            binary_feature=binary_feature
+            binary_feature=binary_feature,
+            num_tasks=self.num_tasks
         )
         return cross_entropy_loss + calibration_loss * self.cali_loss_wt
