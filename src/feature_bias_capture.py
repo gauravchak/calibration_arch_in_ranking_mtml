@@ -90,7 +90,12 @@ class FeatureBiasCapture(MultiTaskEstimator):
         # Compute per-task scores/logits without worrying about feature
         # based calibration
         ui_logits: torch.Tensor = self.task_arch(combined_features)  # [B, T]
-        # For each task it learns logit_delta = w * feature + b
-        # Then returns ui_logit + logit_delta
-        calibration_bias: torch.Tensor = self.map_feature_bias(user_features)  # [B, T]
+        # For each task it learns calibration_bias = w * feature + b
+        # Then returns ui_logit + calibration_bias
+        cali_feature: torch.Tensor = user_features[:,self.cali_user_feature_index].unsqueeze(-1)
+        assert cali_feature.shape == torch.Size([self.training_batch_size, 1]), (
+            f"shape = {cali_feature.shape} not {self.training_batch_size}"
+        )
+        calibration_bias: torch.Tensor = self.map_feature_bias(cali_feature)  # [B, T]
+        assert calibration_bias.shape == torch.Size([self.training_batch_size, self.num_tasks])
         return ui_logits + calibration_bias
